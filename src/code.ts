@@ -33,6 +33,9 @@ function scanProperty(nodes:ReadonlyArray<SceneNode>): void {
           if(!variablesOfNode?.itemSpacing){
             itemSpacingInfoArray.push(createInfo('itemSpacing', node.itemSpacing, node));
           }
+          if(!node.counterAxisSpacing && !variablesOfNode?.counterAxisSpacing){
+            itemSpacingInfoArray.push(createInfo('counterAxisSpacing', node.counterAxisSpacing as number, node));
+          }
         }
     }
   }
