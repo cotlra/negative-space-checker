@@ -1,0 +1,117 @@
+<style>
+  * {
+    font-size: 12px;
+  }
+  
+  .title {
+    font-size: 16px;
+  }
+  .property-header {
+    font-size: 14px;
+    margin: 16px 4px 8px;
+  }
+  .property-list{
+    display: flex;
+    flex-direction: column;
+    border-top:1px solid #ccc;
+  }
+  .item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding:8px 4px;
+    border-bottom: 1px solid #ccc;
+  }
+  .item__labels {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+</style>
+
+<h1 class="title">Negative Space Checker</h1>
+<button id="scanPage">Scan Page</button>
+<button id="scanSelected">Scan Selected</button>
+<div id="result"></div>
+<script>
+
+document.getElementById('scanPage').onclick = () => {
+  parent.postMessage({ pluginMessage: { type: 'scan-page' } }, '*');
+}
+
+document.getElementById('scanSelected').onclick = () => {
+  parent.postMessage({ pluginMessage: { type: 'scan-selected' } }, '*');
+}
+
+const resultDiv = document.getElementById('result');
+
+function createHtmlElement(tagName,className,text) {
+  const element = document.createElement(tagName);
+  element.className = className;
+  if(text !== undefined){
+    element.innerText = text;
+  }
+  return element;
+}
+
+function createTitle(titleText){
+  const title = createHtmlElement('h2','property-header', titleText);
+  resultDiv.appendChild(title);
+}
+
+function createItem(itemInfo, propertyName) {
+  
+  const labelsDiv = createHtmlElement('div','item__labels');
+  const pxDiv = createHtmlElement('div','',`${itemInfo.value}px`);
+  labelsDiv.appendChild(pxDiv);
+  const countDiv = createHtmlElement('div','',`(${itemInfo.count})`);
+  labelsDiv.appendChild(countDiv);
+
+  const selectButton = createHtmlElement('button','','Select');
+  selectButton.onclick = () => {
+    parent.postMessage({ pluginMessage: { type: 'select-nodes',propertyName, value: itemInfo.value } }, '*');
+  };
+  const itemDiv = createHtmlElement('div','item');
+  itemDiv.appendChild(labelsDiv);
+  itemDiv.appendChild(selectButton);
+  return itemDiv;
+}
+
+onmessage = (event) => {
+  const type = event.data.pluginMessage.type;
+  if(type === 'scan-result'){
+    const paddingInfo = event.data.pluginMessage.paddingInfo;
+    const itemSpacingInfo = event.data.pluginMessage.itemSpacingInfo;
+    while (resultDiv.firstChild) {
+      resultDiv.removeChild(resultDiv.firstChild);
+
+    }
+    if(paddingInfo.length <= 0 && itemSpacingInfo.length <= 0){
+      resultDiv.appendChild(createHtmlElement('div','error-message','No matter found.'));
+      return;
+    }
+
+    if(paddingInfo.length > 0){
+      createTitle('Padding');
+    }
+
+
+    const paddingListDiv = createHtmlElement('div','property-list');
+    for (let i = 0; i < paddingInfo.length; i++) {
+      paddingListDiv.appendChild(createItem(paddingInfo[i], 'padding'));
+    }
+    resultDiv.appendChild(paddingListDiv);
+
+    if(paddingInfo.length > 0){
+      createTitle('Item Spacing');
+    }
+
+    const itemSpacingListDiv = createHtmlElement('div','property-list');
+    for (let i = 0; i < itemSpacingInfo.length; i++) {
+      itemSpacingListDiv.appendChild( createItem(itemSpacingInfo[i], 'item-spacing'));
+    }
+    resultDiv.appendChild(itemSpacingListDiv);
+  }
+}
+
+</script>
