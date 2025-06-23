@@ -13,7 +13,6 @@ function createInfo(type:PropType,value: number, node: SceneNode):PropInfo {
 }
 
 function scanProperty(nodes:ReadonlyArray<SceneNode>): void {
-  clearArray();
   for(const node of nodes) {
     const variablesOfNode = node.boundVariables;
     if(node.type == 'FRAME'){
@@ -38,8 +37,16 @@ function scanProperty(nodes:ReadonlyArray<SceneNode>): void {
           }
         }
     }
+    if("children" in node){
+      scanProperty(node.children);
+    }
   }
+}
 
+
+function scanAll(nodes:ReadonlyArray<SceneNode>):void{
+  clearArray();
+  scanProperty(nodes);
   figma.ui.postMessage({
     type: 'scan-result',
     paddingInfo:getValuesAndCount(paddingInfoArray),
@@ -68,14 +75,14 @@ figma.ui.onmessage = async  (msg: {type: string,propertyName:string|undefined,va
     if(pageChildren.length <= 0) {
       figma.notify('This page is no object.');
     }
-    scanProperty(pageChildren);
+    scanAll(pageChildren);
 
   } else if (msg.type === 'scan-selected'){
     const selection: ReadonlyArray<SceneNode> = figma.currentPage.selection;
     if(selection.length <= 0) {
       figma.notify('Please select at least one object.');
     }
-    scanProperty(selection);
+    scanAll(selection);
 
   }else if (msg.type === 'select-nodes') {
     let infoArray: PropInfo[] = [];
